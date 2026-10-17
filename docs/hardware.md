@@ -33,7 +33,8 @@ built-in keyboard, or a Pi 3, it will still work, but the case notes in
 | 1 | Raspberry Pi 4 Model B | you have it |
 | 1 | **Official Raspberry Pi 15 W USB-C power supply** (5.1 V 3 A) | Phone chargers sag in voltage, and Bluetooth gets flaky when the Pi runs low. The Pi 4's USB ports share a 1.2 A budget, plenty for the Sinc. |
 | 1 | microSD, 16–32 GB, A1, "High Endurance" type | e.g. SanDisk High Endurance |
-| 1 | USB-C (keyboard) to USB-A (Pi) cable, 0.5–1 m | Use the Sinc's own cable if it's C-to-A, or a good C-to-A cable |
+| 1 | **USB-C to USB-C cable**, 0.5–1 m | Sinc to the box's USB-C keyboard port. Any C-to-C cable carries keyboard data. |
+| 1 | **USB-C (female) to USB-A (male) adapter**, short, data-capable | Makes the box's keyboard port USB-C (Option A below). Get a *data* one, not "charge only"; ones with a 56 kΩ resistor are the in-spec kind. Measure it before the case CAD is finalised. |
 | 1 | Pi 4 heatsink set (stick-on) | optional; the load is light but the case is closed |
 | 1 | Momentary push button, 12 mm panel-mount *or* 6×6 mm tactile + printed cap | profile toggle / pairing |
 | 2 | 3 mm LEDs, two colours (say green = host 1, blue = host 2) | or one common-cathode bicolour LED |
@@ -42,17 +43,45 @@ built-in keyboard, or a Pi 3, it will still work, but the case notes in
 | 4 + 4 | M2.5 × 6 mm screws, M2.5 heat-set inserts | Pi mounting |
 | 4 | M3 × 8 screws + M3 inserts (or snap-fit) | lid |
 | 4 | Rubber feet | |
-| *opt.* | Panel-mount USB-A female extension, about 30 cm | the keyboard plugs into the case wall, not the Pi |
-| *opt.* | Panel-mount USB-C extension (male to female), about 30 cm | power plugs into the case wall |
+| *opt. B* | Panel-mount **USB-C (female) to USB-A (male)** extension, 20–30 cm, right-angle A plug if you can | keyboard port anywhere on the case (Option B) |
+| *opt. B* | Panel-mount **USB-C (female) to USB-C (male)** extension, 20–30 cm, rated 3 A, right-angle plug if you can | power port anywhere on the case (Option B) |
 | *opt.* | Small perfboard (about 30 × 20 mm) | carries the button, LEDs and resistors |
 
 **Batteries:** not recommended. A Pi 4 draws about 3 W, so a 10,000 mAh power bank
 lasts only about 10–12 hours. A battery build would need a different board, such as a
 Zero 2 W with a PiSugar, plus a power-off routine.
 
-**Clean power option:** the panel-mount USB-C extension is the simplest. Wiring 5 V
-into GPIO pins 2/4 (5 V) and 6 (GND) also works, but it bypasses the Pi 4's input
-protection. Only do that with a good supply and 22 AWG wire.
+## USB-C on the box: power in and keyboard in
+
+Both ports on the box are USB-C. Power is easy, since the Pi 4's power input is already
+USB-C. The keyboard needs one adapter, because the Pi 4's host ports are all USB-A.
+
+**Option A, compact (recommended):**
+
+- **Power:** the Pi's own USB-C power port sits in a cutout in the front wall. No
+  extra parts.
+- **Keyboard:** a short USB-C (female) to USB-A (male) adapter plugs into a **black
+  USB 2.0 port**, and its USB-C face sits flush with the side wall. A printed collar
+  in the case grips the adapter body, so pulling the keyboard cable loads the case,
+  not the Pi's USB port.
+- The two ports are on **different walls**, so they're hard to mix up.
+
+**Option B, panel-mount cables:** two short panel-mount extensions (C→A for the
+keyboard, C→C for power) let you put both sockets wherever you like, for example side
+by side on the back wall. It's tidier on the desk, but the box gets bigger (room
+for the plugs and cable bends; right-angle plugs help) and there are two more
+connections that can work loose.
+
+**Rules for both options:**
+
+- **Label the ports on the case** (emboss "PWR" with a ⚡ and "KB" with a keyboard
+  icon). The keyboard port is *not* a power input. Some USB-C power supplies put
+  out 5 V as soon as they're plugged in, and that would push power backwards into
+  the Pi's USB port.
+- Power with the **official supply**. Early Pi 4 boards (rev 1.1) don't power up from
+  some USB-C laptop chargers with "smart" (e-marked) C-to-C cables.
+- Wiring 5 V straight to GPIO pins 2/4 + 6 also powers the Pi, but it bypasses the
+  Pi's input protection. Not needed here.
 
 ## Wiring (BCM numbering, 40-pin header)
 

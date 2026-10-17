@@ -115,7 +115,7 @@ bluetoothctl show | grep -i class      # should end in ...540
 
 ### 4. Plug in the keyboard
 
-Plug the Sinc into one of the **black USB 2.0 ports**. The blue USB 3.0 ports give off
+Plug the Sinc into one of the **black USB 2.0 ports**, using the USB-C→A adapter and a C-to-C cable (the box's keyboard port is USB-C; see [docs/hardware.md](docs/hardware.md#usb-c-on-the-box-power-in-and-keyboard-in)). The blue USB 3.0 ports give off
 2.4 GHz noise that can hurt Bluetooth. The log should show
 `keyboard interface: Keebio Sinc ...` a few times, once for each of the keyboard's USB
 interfaces.

@@ -22,9 +22,9 @@ the long edge with USB-C and HDMI. The "left" edge has the microSD card.
 | Edge | Connector | Centre position | Notes |
 |---|---|---|---|
 | Right (x = 85) | USB 3.0 pair (blue) | y = 9.0 | Housing sticks out about 2–3 mm past the PCB edge |
-| Right | **USB 2.0 pair (black), use for the keyboard** | y = 27.0 | |
+| Right | **USB 2.0 pair (black), use for the keyboard** | y = 27.0 | Option A: the USB-C→A adapter plugs in here and passes through the side wall |
 | Right | Ethernet | y = 45.75 | Keep it reachable for wired SSH if you turn Wi-Fi off |
-| Bottom (y = 0) | **USB-C power** | x = 11.2 | Keep it open even if you also have a panel-mount power input |
+| Bottom (y = 0) | **USB-C power** | x = 11.2 | Option A: this *is* the box's power port; put the board's bottom edge about 1 mm from the front wall |
 | Bottom | micro-HDMI 0 / 1 | x = 26.0 / 39.5 | Not needed after setup; a cover is fine |
 | Bottom | 3.5 mm audio | x = 53.5 | not needed |
 | Left (x = 0) | microSD (underside) | about y = 28 | Card sticks out about 2.5 mm. Leave a slot of at least 14 × 3 mm, or a removable panel |
@@ -52,15 +52,27 @@ the long edge with USB-C and HDMI. The "left" edge has the microSD card.
    centre) and along the bottom walls (about 30 mm² total each side is plenty), plus
    the stick-on heatsink. **PETG or ASA** is safer than PLA, which softens around
    55–60 °C.
-7. **Strain relief:** if you use panel-mount extensions for USB-A (keyboard) and USB-C
-   (power), cable tugs pull on the case instead of the Pi's connectors. Add a printed
-   clamp or a zip-tie anchor for the short cables inside.
+7. **USB-C ports (see hardware.md, "USB-C on the box"):**
+   - *Option A:* the Pi's USB-C power port and a USB-C→A adapter in a black USB 2.0
+     port. The adapter's USB-C face sits flush with (or up to 0.5 mm inside) the
+     outer wall. Around it, a printed **collar** 6–8 mm deep grips the adapter body
+     (+0.15 mm per side; measure the adapter), tied into the wall and floor, so cable
+     tugs load the case instead of the Pi. The power cutout is in the front wall,
+     over the Pi's USB-C port.
+   - *Option B:* panel-mount extensions screwed to the wall (measure the flange and
+     screw spacing; they vary), plus room inside for the plugs: about 35 mm beyond a
+     straight USB-A plug, 25 mm with right-angle plugs. Tie the cables down inside.
+   - USB-C opening for the cable's plug: 12.5 × 7 mm minimum (the moulded housing),
+     with the wall thinned to 1.2–1.5 mm around it so the plug seats fully.
+   - Emboss **PWR ⚡** and **KB ⌨** next to the ports, ideally on different walls.
 8. **Button and LEDs:** a 12 mm panel button needs a 12.2 mm hole and a wall of 2 mm or
    less. For a 6×6 tactile switch on perfboard, print a plunger with 0.3 mm clearance
    in its guide. 3 mm LEDs: a 3.0 mm hole for a press fit, or print light pipes in
    clear or natural PETG.
-9. **Size:** with the perfboard and panel connectors, plan on about 95 × 66 mm inside
-   and 30 mm tall, which is about 101 × 72 × 34 mm outside with 3 mm walls.
+9. **Size:** Option A is about 100 × 66 mm inside (the Pi plus the adapter sticking
+   out about 13 mm past the USB port) and 30 mm tall, so roughly 106 × 72 × 34 mm
+   outside with 3 mm walls. Option B adds about 25–35 mm in one direction for the
+   plugs.
 10. **Feet:** rubber feet, or 1 mm recesses for them, so the box doesn't slide when you
     plug in a cable.
 

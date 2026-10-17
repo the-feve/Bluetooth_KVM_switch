@@ -44,6 +44,11 @@
 - Pi 4 over Zero 2 W: the owner has one, it has USB-A host ports (no OTG adapter or
   splitter), and it's desk-powered anyway.
 - Separate box, not built into the split keyboard (see docs/enclosure.md).
+- **Both box ports are USB-C** (owner, 2026-10-17). Option A (recommended): the Pi's own
+  USB-C power port in the front wall, plus a USB-C(f)→USB-A(m) adapter in a black USB 2.0
+  port, flush with the side wall and held by a printed collar. Option B: panel-mount
+  extensions. Ports labelled and on different walls, because the keyboard port isn't a
+  power input. The Sinc uses a C-to-C cable.
 
 ## Next steps
 
