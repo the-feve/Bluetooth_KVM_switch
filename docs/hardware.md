@@ -75,21 +75,22 @@ cables.
 ## Wiring (BCM numbering, 40-pin header)
 
 All of the buttons and LEDs share one ground wire, so the front-panel perfboard needs
-seven wires to the Pi:
+seven wires to the Pi. The buttons and ground are on the header's inner row, the four
+LEDs on the outer row:
 
 ```
  GND ............ pin 9   (shared by both buttons and all four LED short legs)
  Keyboard button  GPIO17  pin 11 ──[button]── GND     internal pull-up, no resistor
  Mouse button     GPIO27  pin 13 ──[button]── GND
- Keyboard LED 1   GPIO23  pin 16 ──[330 Ω]──►|── GND  keyboard on host 1
- Keyboard LED 2   GPIO24  pin 18 ──[330 Ω]──►|── GND  keyboard on host 2
- Mouse LED 1      GPIO22  pin 15 ──[330 Ω]──►|── GND  mouse on host 1
+ Keyboard LED 1   GPIO18  pin 12 ──[330 Ω]──►|── GND  keyboard on host 1
+ Keyboard LED 2   GPIO23  pin 16 ──[330 Ω]──►|── GND  keyboard on host 2
+ Mouse LED 1      GPIO24  pin 18 ──[330 Ω]──►|── GND  mouse on host 1
  Mouse LED 2      GPIO25  pin 22 ──[330 Ω]──►|── GND  mouse on host 2
                                   (long leg = anode, toward the resistor/GPIO)
 ```
 
 They're all within pins 9–22, so a single 2 × 7 female header (pins 9–22) can carry
-them. The Vilros case fan, if fitted, stays on pins 4 and 6.
+them. (GPIO18 is also the PCM audio pin; that's off by default, so it's free.) The Vilros case fan, if fitted, stays on pins 4 and 6.
 
 You can change the pins in `/etc/bt-kvm/config.json` (`buttons` and `leds`, each with
 `kb` and `mouse`). Set any of them to `null` to leave it out.

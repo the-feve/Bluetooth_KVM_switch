@@ -66,7 +66,7 @@ DEFAULT_CONFIG = {
     # BCM GPIO numbers; null disables one. Buttons to GND; LEDs via 330 ohm to GND.
     # Each channel has a button and two LEDs: [host 1, host 2].
     "buttons": {"kb": 17, "mouse": 27},
-    "leds": {"kb": [23, 24], "mouse": [22, 25]},
+    "leds": {"kb": [18, 23], "mouse": [24, 25]},
     "button_hold_seconds": 3,
     "pairing_seconds": 120,
     "mouse_report_ms": 8,  # at most ~125 mouse reports a second over Bluetooth
