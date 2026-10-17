@@ -14,6 +14,11 @@ installed on them. That matters for a locked-down work PC.
 **Status:** the code passes its unit tests but has not been run on real hardware yet.
 See [TODO.md](TODO.md) for what still needs checking.
 
+**New to Raspberry Pi? Start with the illustrated, step-by-step build guide:
+https://fevergeon.com/cad-software/bluetooth-kvm/guide/** It covers flashing the SD
+card, connecting over SSH, pairing both PCs and wiring the button, with interactive
+diagrams. This README is the shorter technical version.
+
 - [docs/hardware.md](docs/hardware.md): which Pi to use, what to buy, wiring
 - [docs/enclosure.md](docs/enclosure.md): Pi 4 dimensions, port layout, case rules
 - [HANDOFF.md](HANDOFF.md): how the code works, and the decisions behind it
@@ -78,9 +83,6 @@ git clone https://github.com/the-feve/Bluetooth_KVM_switch.git
 cd Bluetooth_KVM_switch
 sudo ./install.sh
 ```
-
-The work currently lives on the `claude/festive-hopper-swypfc` branch. Until it is
-merged, run `git checkout claude/festive-hopper-swypfc` before `install.sh`.
 
 `install.sh` does the following. Each step can also be done by hand:
 

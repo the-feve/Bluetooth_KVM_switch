@@ -8,6 +8,13 @@
 - Target: Raspberry Pi 4 Model B (the owner's unit), Raspberry Pi OS Lite 64-bit,
   Keeb.io Sinc Rev. 4 (QMK/VIA).
 
+- Website: project page https://fevergeon.com/cad-software/bluetooth-kvm/ and the
+  first-time build guide …/guide/ (interactive diagrams), both in the-feve/fevergeon-site.
+  The owner is new to Raspberry Pi; update the guide as each step is done on hardware.
+- The repo's default branch is `claude/festive-hopper-swypfc` (it was the first push to an
+  empty repo), so a plain `git clone` gets the code. Renaming it to `main` later is fine;
+  the guide links use `HEAD`.
+
 ## Code map
 
 - `bt_kvm/hid.py`: report descriptor, SDP record, evdev→HID tables, `KeyState`,

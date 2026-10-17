@@ -9,6 +9,10 @@
 - [ ] Measure the time from switching until the first keystroke lands, for both the connected and reconnect cases.
 - [ ] Reboot test: hosts reconnect by themselves after the Pi reboots.
 
+## Website guide (fevergeon.com/cad-software/bluetooth-kvm/guide/)
+- [ ] As each step works on the Pi, remove its "not yet tested" badge and add photos or screenshots (Imager screens, first SSH login, Windows pairing, the wiring).
+- [ ] Add the enclosure as a guide step once the CAD exists (interactive exploded view or annotated renders).
+
 ## Later
 - [ ] Enclosure CAD (Pi 4 box, panel USB-A and USB-C, button, two LEDs); dimensions are in docs/enclosure.md. Print fit coupons first.
 - [ ] Keep pairings when the read-only overlay is on (bind-mount /var/lib/bluetooth and /var/lib/bt-kvm onto a small writable partition).
