@@ -1,0 +1,17 @@
+[Unit]
+Description=USB keyboard to two-host Bluetooth switch (bt-kvm)
+After=bluetooth.service
+Requires=bluetooth.service
+# restart along with bluetoothd, which forgets our SDP record and agent when it restarts
+PartOf=bluetooth.service
+# keep retrying while the Pi's Bluetooth chip is still coming up at boot
+StartLimitIntervalSec=0
+
+[Service]
+WorkingDirectory=/opt/bt-kvm
+ExecStart=/usr/bin/python3 -m bt_kvm
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

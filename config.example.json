@@ -1,0 +1,13 @@
+{
+  "device_name": "BT-KVM Keyboard",
+  "adapter": "hci0",
+  "keyboard_names": [],
+  "hotkeys": {"KEY_F21": "host1", "KEY_F22": "host2", "KEY_F23": "pair"},
+  "chord_modifiers": ["KEY_LEFTCTRL", "KEY_RIGHTCTRL"],
+  "chord_keys": {"KEY_1": "host1", "KEY_2": "host2", "KEY_0": "pair"},
+  "gpio_button": 17,
+  "gpio_led_host1": 23,
+  "gpio_led_host2": 24,
+  "button_hold_seconds": 3,
+  "pairing_seconds": 120
+}
