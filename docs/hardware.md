@@ -28,9 +28,17 @@ built-in keyboard, or a Pi 3, it will still work, but the case notes in
 
 ## Shopping list
 
+**What the owner has (2026-10-17): a Vilros Raspberry Pi 4 kit.** It includes a Pi 4 Model B
+(4 GB), a Vilros USB-C 5.1 V 3 A supply with an on/off switch (fine in place of the
+official one; switch off only after `sudo poweroff`), a Vilros black case with fan (a
+stand-in until the custom box exists; fan on GPIO pins 4 and 6, no clash with ours), a
+microSD card (gets reflashed) and a micro-HDMI adapter (not needed). Still to buy: the
+USB-C→A adapter, a C-to-C cable, and the button/LED parts.
+
+
 | Qty | Part | Notes |
 |---|---|---|
-| 1 | Raspberry Pi 4 Model B | you have it |
+| 1 | Raspberry Pi 4 Model B | you have it (Vilros kit, 4 GB) |
 | 1 | **Official Raspberry Pi 15 W USB-C power supply** (5.1 V 3 A) | Phone chargers sag in voltage, and Bluetooth gets flaky when the Pi runs low. The Pi 4's USB ports share a 1.2 A budget, plenty for the Sinc. |
 | 1 | microSD, 16–32 GB, A1, "High Endurance" type | e.g. SanDisk High Endurance |
 | 1 | **USB-C to USB-C cable**, 0.5–1 m | Sinc to the box's USB-C keyboard port. Any C-to-C cable carries keyboard data. |

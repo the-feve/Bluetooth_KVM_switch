@@ -49,6 +49,9 @@
   port, flush with the side wall and held by a printed collar. Option B: panel-mount
   extensions. Ports labelled and on different walls, because the keyboard port isn't a
   power input. The Sinc uses a C-to-C cable.
+- Owner's hardware: a Vilros Pi 4 kit (4 GB Pi, 5.1 V 3 A switched supply, Vilros case
+  with fan, SD card). The custom box attaches to the desk organizer's dovetail rail
+  (docs/enclosure.md, "Desk organizer mount"); the Vilros case is the stand-in until then.
 
 ## Next steps
 

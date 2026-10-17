@@ -94,3 +94,26 @@ the long edge with USB-C and HDMI. The "left" edge has the microSD card.
 A middle ground, if you want it to look like part of the keyboard: print the box in
 the same colour and stick it under the desk or monitor stand with Velcro, with a
 0.5–1 m cable to the keyboard.
+
+## Desk organizer mount (planned)
+
+The owner wants the box to attach to the desk organizer (the-feve/desk-org-builder),
+not to sit loose. That project already has an accessory standard, which the box uses:
+
+- **Rail:** a dovetail tongue that hangs down under the shelf. It comes from a
+  `Rail_Clip` on the front or back edge dowel, or a `Rail_Plate` screwed under a
+  plywood top. Profile (deskgen `accessories.py`): 10 mm wide at the root, 14 mm at
+  the tip, 5 mm tall, 0.2 mm clearance per face. Sockets are 24 mm long and 22 mm
+  wide.
+- **Box:** hangs **under the shelf** like the pencil tray, with **two sockets about
+  60 mm apart** on its top so it can't twist, and slides onto the rail from the end.
+  With the default 110 mm shelf height there is roughly 75 mm under the clip for a
+  box about 34 mm tall.
+- **Faces:** KB (USB-C) toward the keyboard side, PWR toward the back, and the button
+  and both LEDs on the front face where you can see them.
+- **Radio:** the wooden shelf above doesn't block Bluetooth. Keep the antenna end
+  away from metal desk legs and monitor arms.
+- **Where the CAD lives:** as a new accessory kind (`kvm_box`) in deskgen, so it shows
+  up in the desk viewer and uses the same rail constants. The Pi 4 numbers above (holes,
+  ports, collar) drive the inside.
+- **Fan:** not used. The load is light; vents and a stick-on heatsink are enough.
