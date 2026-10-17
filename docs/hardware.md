@@ -44,12 +44,12 @@ USB-C→A adapter, a C-to-C cable, and the button/LED parts.
 | 1 | **USB-C to USB-C cable**, 0.5–1 m | Sinc to the box's USB-C keyboard port. Any C-to-C cable carries keyboard data. |
 | 1 | **USB-C (female) to USB-A (male) adapter**, short, data-capable | Makes the box's keyboard port USB-C (Option A below). Get a *data* one, not "charge only"; ones with a 56 kΩ resistor are the in-spec kind. Measure it before the case CAD is finalised. |
 | 1 | Pi 4 heatsink set (stick-on) | optional; the load is light but the case is closed |
-| 1 | Momentary push button, 12 mm panel-mount *or* 6×6 mm tactile + printed cap | profile toggle / pairing |
+| 1 | Mini momentary panel push button, 7 mm thread (e.g. PBS-110 style) | profile toggle / pairing; fits the desk-organizer box |
 | 2 | 3 mm LEDs, two colours (say green = host 1, blue = host 2) | or one common-cathode bicolour LED |
 | 2 | 330 Ω resistors, ¼ W | one per LED |
 | 1 | Female Dupont jumpers or a 2×20 female header, heat-shrink | so the Pi stays removable |
 | 4 + 4 | M2.5 × 6 mm screws, M2.5 heat-set inserts | Pi mounting |
-| 4 | M3 × 8 screws + M3 inserts (or snap-fit) | lid |
+| 4 | M3 × 8 countersunk screws + M3 heat-set inserts | tray to lid |
 | 4 | Rubber feet | |
 | *opt. B* | Panel-mount **USB-C (female) to USB-A (male)** extension, 20–30 cm, right-angle A plug if you can | keyboard port anywhere on the case (Option B) |
 | *opt. B* | Panel-mount **USB-C (female) to USB-C (male)** extension, 20–30 cm, rated 3 A, right-angle plug if you can | power port anywhere on the case (Option B) |
@@ -66,13 +66,14 @@ USB-C. The keyboard needs one adapter, because the Pi 4's host ports are all USB
 
 **Option A, compact (recommended):**
 
-- **Power:** the Pi's own USB-C power port sits in a cutout in the front wall. No
-  extra parts.
+- **Power:** the Pi's own USB-C power port sits behind an opening in the right side
+  of the box. No extra parts.
 - **Keyboard:** a short USB-C (female) to USB-A (male) adapter plugs into a **black
-  USB 2.0 port**, and its USB-C face sits flush with the side wall. A printed collar
+  USB 2.0 port**, and its USB-C face sits flush with the front face. A printed collar
   in the case grips the adapter body, so pulling the keyboard cable loads the case,
   not the Pi's USB port.
-- The two ports are on **different walls**, so they're hard to mix up.
+- The two ports are on **different faces** (KB in front, PWR on the right), so they're
+  hard to mix up. See enclosure.md, "Desk organizer mount".
 
 **Option B, panel-mount cables:** two short panel-mount extensions (C→A for the
 keyboard, C→C for power) let you put both sockets wherever you like, for example side
