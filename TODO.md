@@ -15,8 +15,7 @@
 
 - [ ] Buy the USB-C→A adapter (data-capable) and a C-to-C cable for the Sinc; measure the adapter for the collar.
 
-- [x] Enclosure designed as a desk-organizer rail accessory, under the front edge (`kvm_box` in the-feve/desk-org-builder: KVM_Lid + KVM_Box). See docs/enclosure.md.
-- [ ] Measure the adapter, its offset and the lower USB port height; update `kvm_box.py`; print and fit-test.
+- [ ] Measure the USB-C adapter (its USB-C end, and how far it sticks out of the USB port) before the case is finalised.
 
 ## Later
 - [ ] Enclosure CAD (Pi 4 box, panel USB-A and USB-C, button, two LEDs); dimensions are in docs/enclosure.md. Print fit coupons first.

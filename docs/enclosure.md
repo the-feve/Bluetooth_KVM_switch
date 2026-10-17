@@ -94,35 +94,3 @@ the long edge with USB-C and HDMI. The "left" edge has the microSD card.
 A middle ground, if you want it to look like part of the keyboard: print the box in
 the same colour and stick it under the desk or monitor stand with Velcro, with a
 0.5–1 m cable to the keyboard.
-
-## Desk organizer mount (designed 2026-10-17, not printed yet)
-
-The box hangs under the **front edge** of the owner's desk organizer
-(the-feve/desk-org-builder, owner's choice). The CAD is `geometry/deskgen/kvm_box.py`
-there, as accessory kind `kvm_box` (in the starter layout at x = 150; the controller
-mount moved from 185 to 222 to make room).
-
-- **KVM_Lid:** a flat plate with **one standard dovetail socket** (the same as every
-  other accessory: 10 → 14 mm tongue, 5 mm tall, 0.2 mm per face, 24 mm long). It
-  slides onto a front `Rail_Clip` and prints socket-up with no supports. One socket
-  is enough: the pencil tray hangs a longer load from one.
-- **KVM_Box:** an open tray that prints upright, screwed under the lid with
-  4 × M3 × 8 countersunk screws into heat-set inserts in the corner bosses. A
-  one-piece shell can't print, because the socket would sit on the bed with the
-  whole roof overhanging.
-- **Layout:** the Pi lies flat, component side up, on 4 standoffs (5 mm, M2.5
-  inserts), with its **USB end toward you**. **KB** (the USB-C→A adapter in the
-  lower black USB 2.0 port, held by a collar pillar) is on the **front face**, with
-  the two LEDs and a 7 mm mini panel button above it. **PWR** (the Pi's own USB-C) is
-  on the **right side**, near the back. "KB" and "PWR" are engraved next to them.
-  Ethernet and USB 3 stay closed. To reach the SD card, take off the tray.
-- **Size:** 66 × 112 mm, hanging 53 mm below the rail's mounting face (about 33 mm
-  above the desk with the default 110 mm shelf). Vents in both sides, the floor and
-  the lid; no fan.
-- **Checked by tests:** the Pi 4 envelope (board, port housings, SD card), the adapter,
-  the lid and the rail tongue all fit with no overlap, and the whole desk has no
-  clashes with the box fitted.
-- **Measure before the final print** (constants at the top of `kvm_box.py`): the
-  adapter's USB-C end (12.5 × 6.5 mm assumed), how far its face sits in front of the
-  USB port (13 mm), and the lower USB 2.0 port's centre above the PCB (5 mm). Also
-  check the button's thread (7 mm hole).

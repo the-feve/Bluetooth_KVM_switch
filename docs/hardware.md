@@ -44,7 +44,7 @@ USB-C→A adapter, a C-to-C cable, and the button/LED parts.
 | 1 | **USB-C to USB-C cable**, 0.5–1 m | Sinc to the box's USB-C keyboard port. Any C-to-C cable carries keyboard data. |
 | 1 | **USB-C (female) to USB-A (male) adapter**, short, data-capable | Makes the box's keyboard port USB-C (Option A below). Get a *data* one, not "charge only"; ones with a 56 kΩ resistor are the in-spec kind. Measure it before the case CAD is finalised. |
 | 1 | Pi 4 heatsink set (stick-on) | optional; the load is light but the case is closed |
-| 1 | Mini momentary panel push button, 7 mm thread (e.g. PBS-110 style) | profile toggle / pairing; fits the desk-organizer box |
+| 1 | Mini momentary panel push button, 7 mm thread (e.g. PBS-110 style) | profile toggle / pairing |
 | 2 | 3 mm LEDs, two colours (say green = host 1, blue = host 2) | or one common-cathode bicolour LED |
 | 2 | 330 Ω resistors, ¼ W | one per LED |
 | 1 | Female Dupont jumpers or a 2×20 female header, heat-shrink | so the Pi stays removable |
@@ -73,7 +73,7 @@ USB-C. The keyboard needs one adapter, because the Pi 4's host ports are all USB
   in the case grips the adapter body, so pulling the keyboard cable loads the case,
   not the Pi's USB port.
 - The two ports are on **different faces** (KB in front, PWR on the right), so they're
-  hard to mix up. See enclosure.md, "Desk organizer mount".
+  hard to mix up.
 
 **Option B, panel-mount cables:** two short panel-mount extensions (C→A for the
 keyboard, C→C for power) let you put both sockets wherever you like, for example side
