@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from evdev import ecodes as e
 
 from bt_kvm.hid import (CONSUMER_USAGES, EMPTY_KEYBOARD, KEY_USAGES, REPORT_DESCRIPTOR,
-                        Hotkeys, KeyState, key_code, sdp_record)
+                        Hotkeys, KeyState, MouseState, key_code, sdp_record)
 from bt_kvm.main import DEFAULT_CONFIG
 
 
@@ -91,3 +91,19 @@ def test_descriptor_and_sdp_record():
     assert {"0x0001", "0x0004", "0x000d", "0x0206"} <= ids
     hexdesc = root.find(".//attribute[@id='0x0206']//text").get("value")
     assert bytes.fromhex(hexdesc) == REPORT_DESCRIPTOR
+
+
+def test_mouse_report_and_batching():
+    ms = MouseState()
+    assert ms.event(e.EV_KEY, e.BTN_RIGHT, 1) is True
+    ms.event(e.EV_REL, e.REL_X, 3)
+    ms.event(e.EV_REL, e.REL_X, 4)
+    ms.event(e.EV_REL, e.REL_Y, -2)
+    ms.event(e.EV_REL, e.REL_WHEEL, 1)
+    assert ms.report() == bytes([3, 0x02, 7, 0, 0xFE, 0xFF, 1, 0])
+    assert not ms.moved
+    ms.event(e.EV_REL, e.REL_X, 40000)       # more than one report holds: the rest waits
+    first, second = ms.report(), ms.report()
+    assert int.from_bytes(first[2:4], "little", signed=True) == 32767
+    assert int.from_bytes(second[2:4], "little", signed=True) == 40000 - 32767
+    assert ms.event(e.EV_KEY, e.BTN_RIGHT, 0) is True and ms.buttons == 0

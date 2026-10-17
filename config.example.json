@@ -1,13 +1,40 @@
 {
   "device_name": "BT-KVM Keyboard",
   "adapter": "hci0",
-  "keyboard_names": [],
-  "hotkeys": {"KEY_F21": "host1", "KEY_F22": "host2", "KEY_F23": "pair"},
-  "chord_modifiers": ["KEY_LEFTCTRL", "KEY_RIGHTCTRL"],
-  "chord_keys": {"KEY_1": "host1", "KEY_2": "host2", "KEY_0": "pair"},
-  "gpio_button": 17,
-  "gpio_led_host1": 23,
-  "gpio_led_host2": 24,
+  "device_names": [],
+  "hotkeys": {
+    "KEY_F21": "host1",
+    "KEY_F22": "host2",
+    "KEY_F23": "pair",
+    "KEY_F19": "mouse1",
+    "KEY_F20": "mouse2"
+  },
+  "chord_modifiers": [
+    "KEY_LEFTCTRL",
+    "KEY_RIGHTCTRL"
+  ],
+  "chord_keys": {
+    "KEY_1": "host1",
+    "KEY_2": "host2",
+    "KEY_3": "mouse1",
+    "KEY_4": "mouse2",
+    "KEY_0": "pair"
+  },
+  "buttons": {
+    "kb": 17,
+    "mouse": 27
+  },
+  "leds": {
+    "kb": [
+      23,
+      24
+    ],
+    "mouse": [
+      22,
+      25
+    ]
+  },
   "button_hold_seconds": 3,
-  "pairing_seconds": 120
+  "pairing_seconds": 120,
+  "mouse_report_ms": 8
 }

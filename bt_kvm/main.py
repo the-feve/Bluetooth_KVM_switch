@@ -1,18 +1,24 @@
-"""bt-kvm daemon: read a USB keyboard, send it to one of two Bluetooth hosts.
+"""bt-kvm daemon: a USB keyboard and mouse, each switched between two Bluetooth hosts.
 
 How it fits together (all in one asyncio loop, run as root by systemd):
 
-  USB keyboard --evdev (grabbed)--> KeyState --HID reports--> L2CAP PSM 0x13 --> active host
-                                     Hotkeys --switch/pair--> slot logic, GPIO LEDs
-  GPIO button ----gpiozero thread--> same actions
+  USB keyboard --evdev (grabbed)--> KeyState   --reports--> host the KEYBOARD channel points at
+  USB mouse    --evdev (grabbed)--> MouseState --reports--> host the MOUSE channel points at
+  front buttons (gpiozero thread), hotkeys --> switch a channel / pair; LEDs show where each points
+
+Two channels, switched independently (like a two-device NuPhy, one button each):
+a short press on a channel's button moves that device to the other computer; a long
+hold starts pairing. So the keyboard can type on the work PC while the mouse stays on
+the personal one, or both can follow each other.
 
 Bluetooth Classic HID, device side:
 - bluetoothd runs with its `input` plugin off (-P input), otherwise it holds PSMs 0x11/0x13.
-- We register an SDP record (via ProfileManager1) so hosts see a keyboard, then listen on
-  L2CAP 0x11 (control) and 0x13 (interrupt) ourselves.
-- Hosts that are paired may connect to us at any time; we keep every such connection
-  open, but only the active slot receives reports. Switching to a slot whose host isn't
-  connected makes us dial it (HIDReconnectInitiate=true in the SDP record).
+- We register one SDP record (keyboard + media keys + mouse) via ProfileManager1, so each
+  computer pairs once and gets both devices, and listen on L2CAP 0x11 (control) and
+  0x13 (interrupt) ourselves.
+- Paired hosts may connect at any time and we keep every connection open; each report
+  goes only to the host its channel points at. Switching to a host that isn't connected
+  makes us dial it (HIDReconnectInitiate=true in the SDP record).
 - A D-Bus agent with NoInputNoOutput accepts pairing, but only while pairing mode is on.
 """
 
@@ -31,30 +37,39 @@ from dbus_next.aio import MessageBus
 from dbus_next.service import ServiceInterface, method
 from evdev import ecodes as e
 
-from .hid import EMPTY_CONSUMER, EMPTY_KEYBOARD, HID_UUID, Hotkeys, KeyState, key_code, sdp_record
+from .hid import (EMPTY_CONSUMER, EMPTY_KEYBOARD, EMPTY_MOUSE, HID_UUID, MOUSE_ID, Hotkeys, KeyState,
+                  MouseState, key_code, sdp_record)
 
 log = logging.getLogger("bt-kvm")
 
 CONFIG_PATH = Path(os.environ.get("BT_KVM_CONFIG", "/etc/bt-kvm/config.json"))
 STATE_PATH = Path(os.environ.get("BT_KVM_STATE", "/var/lib/bt-kvm/state.json"))
 
+CHANNELS = ("kb", "mouse")  # what each front button switches
+NAMES = {"kb": "keyboard", "mouse": "mouse"}
+
 DEFAULT_CONFIG = {
     "device_name": "BT-KVM Keyboard",
     "adapter": "hci0",
-    # Grab every USB input device with keys whose name contains one of these
-    # substrings. Empty list = any USB keyboard (fine on a headless Pi).
-    "keyboard_names": [],
+    # Grab every USB input device whose name contains one of these substrings.
+    # Empty list = any USB keyboard or mouse (fine on a headless Pi).
+    "device_names": [],
     # Single keys that fire an action. Map them on a QMK/VIA Fn layer.
-    "hotkeys": {"KEY_F21": "host1", "KEY_F22": "host2", "KEY_F23": "pair"},
+    # Actions: host1/host2 (keyboard), mouse1/mouse2, both1/both2, kb_toggle,
+    # mouse_toggle, pair.
+    "hotkeys": {"KEY_F21": "host1", "KEY_F22": "host2", "KEY_F23": "pair",
+                "KEY_F19": "mouse1", "KEY_F20": "mouse2"},
     # Fallback chord that works with any keyboard: hold all of these + press a key.
     "chord_modifiers": ["KEY_LEFTCTRL", "KEY_RIGHTCTRL"],
-    "chord_keys": {"KEY_1": "host1", "KEY_2": "host2", "KEY_0": "pair"},
-    # BCM GPIO numbers; set to null to disable. Button to GND, LEDs via 330 ohm to GND.
-    "gpio_button": 17,
-    "gpio_led_host1": 23,
-    "gpio_led_host2": 24,
+    "chord_keys": {"KEY_1": "host1", "KEY_2": "host2", "KEY_3": "mouse1", "KEY_4": "mouse2",
+                   "KEY_0": "pair"},
+    # BCM GPIO numbers; null disables one. Buttons to GND; LEDs via 330 ohm to GND.
+    # Each channel has a button and two LEDs: [host 1, host 2].
+    "buttons": {"kb": 17, "mouse": 27},
+    "leds": {"kb": [23, 24], "mouse": [22, 25]},
     "button_hold_seconds": 3,
     "pairing_seconds": 120,
+    "mouse_report_ms": 8,  # at most ~125 mouse reports a second over Bluetooth
 }
 
 PSM_CTRL = 0x11
@@ -100,7 +115,7 @@ def l2cap_listen(psm):
         s.close()
         raise SystemExit(
             f"cannot bind L2CAP PSM {psm:#x}: {ex}. Is bluetoothd still running its input "
-            "plugin? See README step 4 (ExecStart ... -P input).") from ex
+            "plugin? See README step 3 (ExecStart ... -P input).") from ex
     s.listen(2)
     s.setblocking(False)
     return s
@@ -121,6 +136,16 @@ def l2cap_connect(mac, psm, timeout=8.0):
 
 def device_path(adapter, mac):
     return f"/org/bluez/{adapter}/dev_{mac.upper().replace(':', '_')}"
+
+
+def device_kind(caps):
+    """'mouse' for anything that moves a pointer, 'kb' for anything with keys, else None.
+    (A QMK keyboard's mouse-keys interface counts as a mouse and follows the mouse button.)"""
+    if e.REL_X in caps.get(e.EV_REL, []):
+        return "mouse"
+    if e.EV_KEY in caps:
+        return "kb"
+    return None
 
 
 class Host:
@@ -217,29 +242,31 @@ class Profile(ServiceInterface):
 class Kvm:
     def __init__(self, cfg, state):
         self.cfg = cfg
-        self.state = state                    # {"slots": [mac|None, mac|None], "active": 0|1}
+        # {"slots": [mac|None, mac|None], "active": {"kb": 0|1, "mouse": 0|1}}
+        self.state = state
         self.loop = asyncio.get_running_loop()
         self.keys = KeyState()
+        self.mouse = MouseState()
+        self.mouse_flush = None                # pending mouse report timer
         self.hotkeys = Hotkeys(
             {key_code(k): v for k, v in cfg["hotkeys"].items()},
             [key_code(k) for k in cfg["chord_modifiers"]],
             {key_code(k): v for k, v in cfg["chord_keys"].items()},
         )
         self.hosts = {}                       # mac -> Host (connected, or connecting)
-        self.devices = {}                     # evdev path -> InputDevice
+        self.devices = {}                     # evdev path -> (InputDevice, kind)
         self.ignored = set()                  # evdev paths we looked at and don't want
         self.pairing_slot = None
         self.pairing_task = None
-        self.connect_task = None
-        self.leds = []
-        self.button = None
+        self.connect_tasks = {}               # slot -> task
+        self.leds = {}                        # channel -> [LED host 1, LED host 2]
+        self.buttons = []
         self.bus = None
         self.adapter = None
 
     # ---------- state ----------
-    @property
-    def active(self):
-        return self.state["active"]
+    def active(self, ch):
+        return self.state["active"][ch]
 
     def slot_of(self, mac):
         try:
@@ -247,10 +274,13 @@ class Kvm:
         except ValueError:
             return None
 
-    def active_host(self):
-        mac = self.state["slots"][self.active]
+    def host_in_slot(self, slot):
+        mac = self.state["slots"][slot]
         host = self.hosts.get(mac) if mac else None
         return host if host and host.intr else None
+
+    def active_host(self, ch="kb"):
+        return self.host_in_slot(self.active(ch))
 
     # ---------- Bluetooth: D-Bus setup ----------
     async def iface(self, path, name):
@@ -366,7 +396,8 @@ class Kvm:
         if self.pairing_slot is not None and host.mac in slots:
             await self.stop_pairing()
         await self.trust(host.mac)
-        if self.slot_of(host.mac) == self.active:
+        slot = self.slot_of(host.mac)
+        if slot == self.active("kb"):
             self.keys.switched_host()
             self.set_keyboard_leds(host.leds)
         self.update_leds()
@@ -407,7 +438,7 @@ class Kvm:
             return
         if kind_ == GET_REPORT:
             rid = data[1] if len(data) > 1 else 1
-            rep = self.keys.consumer_report() if rid == 2 else self.keys.keyboard_report()
+            rep = {2: self.keys.consumer_report(), MOUSE_ID: EMPTY_MOUSE}.get(rid, self.keys.keyboard_report())
             reply = bytes([(DATA << 4) | 0x1]) + (rep[1:] if host.boot else rep)
         elif kind_ == SET_REPORT:
             if param == 0x2 and len(data) >= 3 and data[1] == 1:
@@ -431,12 +462,15 @@ class Kvm:
             pass
 
     async def send(self, report, host=None):
-        host = host or self.active_host()
+        """Send one report. Without `host`, it goes where its channel points:
+        mouse reports to the mouse's host, everything else to the keyboard's."""
+        if host is None:
+            host = self.active_host("mouse" if report[0] == MOUSE_ID else "kb")
         if host is None or host.intr is None:
             return
         if host.boot:
             if report[0] != 1:
-                return                         # boot keyboards have no media keys
+                return                         # boot keyboards have no media keys or mouse
             payload = b"\xa1" + report[1:]
         else:
             payload = b"\xa1" + report
@@ -446,16 +480,19 @@ class Kvm:
             self.drop(host, f"send failed ({ex})")
 
     def ensure_connected(self):
-        if self.active_host() or self.state["slots"][self.active] is None:
-            return
-        if self.connect_task and not self.connect_task.done():
-            return
-        self.connect_task = self.loop.create_task(self.connect_slot(self.active))
+        """Dial the host of every channel that points at an unconnected, paired slot."""
+        for slot in {self.active(ch) for ch in CHANNELS}:
+            if self.host_in_slot(slot) or self.state["slots"][slot] is None:
+                continue
+            task = self.connect_tasks.get(slot)
+            if task and not task.done():
+                continue
+            self.connect_tasks[slot] = self.loop.create_task(self.connect_slot(slot))
 
     async def connect_slot(self, slot):
         mac = self.state["slots"][slot]
         for attempt in range(1, 4):
-            if self.active != slot or (self.hosts.get(mac) and self.hosts[mac].intr):
+            if slot not in {self.active(ch) for ch in CHANNELS} or self.host_in_slot(slot):
                 return
             log.info("connecting to host %d (%s), try %d", slot + 1, mac, attempt)
             ctrl = None
@@ -480,49 +517,61 @@ class Kvm:
         self.loop.call_soon_threadsafe(lambda: self.loop.create_task(self.do_action(name)))
 
     async def do_action(self, name):
-        if name == "host1":
-            await self.switch(0)
-        elif name == "host2":
-            await self.switch(1)
-        elif name == "toggle":
-            await self.switch(1 - self.active)
-        elif name == "pair":
+        if name in ("host1", "host2"):
+            await self.switch("kb", int(name[-1]) - 1)
+        elif name in ("mouse1", "mouse2"):
+            await self.switch("mouse", int(name[-1]) - 1)
+        elif name in ("both1", "both2"):
+            for ch in CHANNELS:
+                await self.switch(ch, int(name[-1]) - 1)
+        elif name in ("kb_toggle", "toggle"):
+            await self.switch("kb", 1 - self.active("kb"))
+        elif name == "mouse_toggle":
+            await self.switch("mouse", 1 - self.active("mouse"))
+        elif name in ("pair", "kb_pair", "mouse_pair"):
+            ch = "mouse" if name == "mouse_pair" else "kb"
             if self.pairing_slot is None:
-                await self.start_pairing(self.active)
+                await self.start_pairing(self.active(ch))
             else:
                 await self.stop_pairing()
         else:
             log.warning("unknown action %r", name)
 
-    async def switch(self, slot):
-        if slot != self.active:
-            old = self.active_host()
-            if old:
-                await self.send(EMPTY_KEYBOARD, old)   # no stuck keys on the old host
-                await self.send(EMPTY_CONSUMER, old)
-            self.state["active"] = slot
+    async def switch(self, ch, slot):
+        if slot != self.active(ch):
+            old = self.active_host(ch)
+            if old:  # nothing stays held on the computer we leave
+                if ch == "kb":
+                    await self.send(EMPTY_KEYBOARD, old)
+                    await self.send(EMPTY_CONSUMER, old)
+                else:
+                    await self.send(EMPTY_MOUSE, old)
+            self.state["active"][ch] = slot
             save_state(self.state)
-            log.info("active host is now %d", slot + 1)
-        self.keys.switched_host()
+            log.info("%s now goes to host %d", NAMES[ch], slot + 1)
+        if ch == "kb":
+            self.keys.switched_host()
+        else:
+            self.mouse.clear()
         if self.pairing_slot is not None and self.pairing_slot != slot:
             await self.stop_pairing()
-        host = self.active_host()
-        if host:
+        host = self.host_in_slot(slot)
+        if host and ch == "kb":
             self.set_keyboard_leds(host.leds)
-        elif self.state["slots"][slot] is None:
-            log.info("host %d has no computer paired; press the pair shortcut", slot + 1)
+        elif not host and self.state["slots"][slot] is None:
+            log.info("host %d has no computer paired; hold the button to pair", slot + 1)
         else:
             self.ensure_connected()
         self.update_leds()
 
-    # ---------- keyboard ----------
+    # ---------- input devices ----------
     def wanted(self, dev):
-        if e.EV_KEY not in dev.capabilities():
-            return False
         if "usb" not in (dev.phys or ""):
-            return False
-        names = self.cfg["keyboard_names"]
-        return not names or any(n.lower() in dev.name.lower() for n in names)
+            return None
+        names = self.cfg.get("device_names") or self.cfg.get("keyboard_names") or []
+        if names and not any(n.lower() in dev.name.lower() for n in names):
+            return None
+        return device_kind(dev.capabilities())
 
     async def watch_devices(self):
         while True:
@@ -533,38 +582,46 @@ class Kvm:
                     dev = evdev.InputDevice(path)
                 except OSError:
                     continue
-                if not self.wanted(dev):
+                kind = self.wanted(dev)
+                if kind is None:
                     dev.close()
                     self.ignored.add(path)
                     continue
                 try:
-                    dev.grab()   # keep keystrokes away from the Pi's own console
+                    dev.grab()   # keep input away from the Pi's own console
                 except OSError as ex:
                     log.warning("could not grab %s: %s", dev.name, ex)
-                log.info("keyboard interface: %s (%s)", dev.name, path)
-                self.devices[path] = dev
-                self.loop.create_task(self.read_device(path, dev))
-                host = self.active_host()
-                if host:
+                log.info("%s interface: %s (%s)", NAMES[kind], dev.name, path)
+                self.devices[path] = (dev, kind)
+                self.loop.create_task(self.read_device(path, dev, kind))
+                host = self.active_host("kb")
+                if host and kind == "kb":
                     self.set_keyboard_leds(host.leds)
             await asyncio.sleep(2)
 
-    async def read_device(self, path, dev):
+    async def read_device(self, path, dev, kind):
         try:
             async for ev in dev.async_read_loop():
-                if ev.type == e.EV_KEY and ev.value in (0, 1):   # 2 = autorepeat: host repeats
-                    await self.key(ev.code, ev.value == 1)
+                if kind == "kb":
+                    if ev.type == e.EV_KEY and ev.value in (0, 1):   # 2 = autorepeat: host repeats
+                        await self.key(ev.code, ev.value == 1)
+                else:
+                    await self.pointer(ev)
         except OSError:
             pass
-        log.info("keyboard interface gone: %s", path)
+        log.info("%s interface gone: %s", NAMES[kind], path)
         self.devices.pop(path, None)
         try:
             dev.close()
         except OSError:
             pass
-        self.keys.clear()
-        await self.send(EMPTY_KEYBOARD)
-        await self.send(EMPTY_CONSUMER)
+        if kind == "kb":
+            self.keys.clear()
+            await self.send(EMPTY_KEYBOARD)
+            await self.send(EMPTY_CONSUMER)
+        else:
+            self.mouse.clear()
+            await self.send(EMPTY_MOUSE)
 
     async def key(self, code, down):
         swallow, action = self.hotkeys.check(code, down, self.keys.pressed)
@@ -576,14 +633,34 @@ class Kvm:
         if report is not None:
             await self.send(report)
 
+    async def pointer(self, ev):
+        """Mouse events. Buttons go out at once; movement is batched to one report per
+        `mouse_report_ms`, which is about what a Bluetooth link carries."""
+        if ev.type == e.EV_SYN and ev.code == e.SYN_REPORT:
+            if self.mouse.moved and self.mouse_flush is None:
+                self.mouse_flush = self.loop.call_later(
+                    self.cfg["mouse_report_ms"] / 1000, lambda: self.loop.create_task(self.flush_mouse()))
+            return
+        if self.mouse.event(ev.type, ev.code, ev.value):
+            await self.flush_mouse()
+
+    async def flush_mouse(self):
+        if self.mouse_flush is not None:
+            self.mouse_flush.cancel()
+            self.mouse_flush = None
+        await self.send(self.mouse.report())
+        if self.mouse.moved:   # more than one report's worth: keep going
+            self.mouse_flush = self.loop.call_later(
+                self.cfg["mouse_report_ms"] / 1000, lambda: self.loop.create_task(self.flush_mouse()))
+
     def host_leds(self, host, bits):
         host.leds = bits
-        if self.slot_of(host.mac) == self.active:
+        if self.slot_of(host.mac) == self.active("kb"):
             self.set_keyboard_leds(bits)
 
     def set_keyboard_leds(self, bits):
-        for dev in list(self.devices.values()):
-            if e.EV_LED not in dev.capabilities():
+        for dev, kind in list(self.devices.values()):
+            if kind != "kb" or e.EV_LED not in dev.capabilities():
                 continue
             try:
                 dev.set_led(e.LED_NUML, bits & 1)
@@ -592,51 +669,60 @@ class Kvm:
             except OSError:
                 pass
 
-    # ---------- GPIO ----------
+    # ---------- front panel (GPIO) ----------
     def setup_gpio(self):
-        pins = (self.cfg["gpio_led_host1"], self.cfg["gpio_led_host2"])
         try:
             from gpiozero import LED, Button
-            if all(p is not None for p in pins):
-                self.leds = [LED(p) for p in pins]
-            if self.cfg["gpio_button"] is not None:
-                self.button = Button(self.cfg["gpio_button"], pull_up=True, bounce_time=0.05,
-                                     hold_time=float(self.cfg["button_hold_seconds"]))
         except Exception as ex:  # noqa: BLE001 - no GPIO is fine, hotkeys still work
             log.warning("GPIO disabled: %s", ex)
             return
-        if self.button:
+        hold = float(self.cfg["button_hold_seconds"])
+        for ch in CHANNELS:
+            try:
+                pins = (self.cfg.get("leds") or {}).get(ch) or []
+                if len(pins) == 2 and all(p is not None for p in pins):
+                    self.leds[ch] = [LED(p) for p in pins]
+                pin = (self.cfg.get("buttons") or {}).get(ch)
+                if pin is None:
+                    continue
+                button = Button(pin, pull_up=True, bounce_time=0.05, hold_time=hold)
+            except Exception as ex:  # noqa: BLE001
+                log.warning("GPIO for the %s button disabled: %s", NAMES[ch], ex)
+                continue
             held = {"yes": False}
 
-            def on_held():
+            def on_held(ch=ch, held=held):
                 held["yes"] = True
-                self.action("pair")
+                self.action("mouse_pair" if ch == "mouse" else "kb_pair")
 
-            def on_released():
+            def on_released(ch=ch, held=held):
                 if held["yes"]:
                     held["yes"] = False
                 else:
-                    self.action("toggle")
+                    self.action(f"{ch}_toggle")
 
-            self.button.when_held = on_held
-            self.button.when_released = on_released
+            button.when_held = on_held
+            button.when_released = on_released
+            self.buttons.append(button)
 
     def update_leds(self):
-        """Solid = active and connected. Slow blink = active, not connected.
-        Fast blink = pairing mode for that slot. Off = inactive."""
-        for slot, led in enumerate(self.leds):
-            try:
-                if self.pairing_slot == slot:
-                    led.blink(0.1, 0.1)
-                elif slot == self.active:
-                    if self.active_host():
-                        led.on()
+        """Per button, one LED for each computer. Solid = this device goes there and it's
+        connected. Slow blink = goes there, not connected. Fast blink = pairing that
+        computer's slot. Off = the other computer."""
+        for ch, pair in self.leds.items():
+            for slot, led in enumerate(pair):
+                try:
+                    if self.pairing_slot == slot:
+                        led.blink(0.1, 0.1)
+                    elif slot == self.active(ch):
+                        if self.host_in_slot(slot):
+                            led.on()
+                        else:
+                            led.blink(0.5, 0.5)
                     else:
-                        led.blink(0.5, 0.5)
-                else:
-                    led.off()
-            except Exception:  # noqa: BLE001
-                pass
+                        led.off()
+                except Exception:  # noqa: BLE001
+                    pass
 
     # ---------- run ----------
     async def run(self):
@@ -661,26 +747,34 @@ class Kvm:
         await stop.wait()
 
         log.info("shutting down")
-        await self.send(EMPTY_KEYBOARD)
-        await self.send(EMPTY_CONSUMER)
+        for report in (EMPTY_KEYBOARD, EMPTY_CONSUMER, EMPTY_MOUSE):
+            await self.send(report)
         for t in tasks:
             t.cancel()
         for host in list(self.hosts.values()):
             host.close()
         for s in servers:
             s.close()
-        for dev in self.devices.values():
+        for dev, _ in self.devices.values():
             try:
                 dev.ungrab()
             except OSError:
                 pass
-        for led in self.leds:
-            led.off()
+        for pair in self.leds.values():
+            for led in pair:
+                led.off()
 
 
 def load_config():
     cfg = dict(DEFAULT_CONFIG)
-    cfg.update(load_json(CONFIG_PATH, {}))
+    user = load_json(CONFIG_PATH, {})
+    # Older single-button configs: gpio_button / gpio_led_host1/2 drive the keyboard channel.
+    if "gpio_button" in user and "buttons" not in user:
+        user["buttons"] = {"kb": user["gpio_button"], "mouse": DEFAULT_CONFIG["buttons"]["mouse"]}
+    if "gpio_led_host1" in user and "leds" not in user:
+        user["leds"] = {"kb": [user["gpio_led_host1"], user.get("gpio_led_host2")],
+                        "mouse": DEFAULT_CONFIG["leds"]["mouse"]}
+    cfg.update(user)
     return cfg
 
 
@@ -689,7 +783,10 @@ def load_state():
     slots = list(state.get("slots", [None, None]))[:2]
     slots += [None] * (2 - len(slots))
     active = state.get("active", 0)
-    return {"slots": slots, "active": active if active in (0, 1) else 0}
+    if not isinstance(active, dict):           # older state: one number for the keyboard
+        active = {"kb": active, "mouse": active}
+    active = {ch: active.get(ch, 0) if active.get(ch, 0) in (0, 1) else 0 for ch in CHANNELS}
+    return {"slots": slots, "active": active}
 
 
 def main():

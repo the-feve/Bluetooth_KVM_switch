@@ -18,7 +18,7 @@
 ## Code map
 
 - `bt_kvm/hid.py`: report descriptor, SDP record, evdev→HID tables, `KeyState`,
-  `Hotkeys`. No Bluetooth, so it can be tested anywhere.
+  `MouseState`, `Hotkeys`. No Bluetooth, so it can be tested anywhere.
 - `bt_kvm/main.py`: the `Kvm` daemon (asyncio). It handles the BlueZ agent and profile
   over D-Bus (dbus-next), the L2CAP 0x11/0x13 sockets, slots and switching, the evdev
   grab with hotplug polling, and the gpiozero button and LEDs.
@@ -44,11 +44,16 @@
 - Pi 4 over Zero 2 W: the owner has one, it has USB-A host ports (no OTG adapter or
   splitter), and it's desk-powered anyway.
 - Separate box, not built into the split keyboard (see docs/enclosure.md).
-- **Both box ports are USB-C** (owner, 2026-10-17). Option A (recommended): the Pi's own
-  USB-C power port in the front wall, plus a USB-C(f)→USB-A(m) adapter in a black USB 2.0
-  port, flush with the side wall and held by a printed collar. Option B: panel-mount
-  extensions. Ports labelled and on different walls, because the keyboard port isn't a
-  power input. The Sinc uses a C-to-C cable.
+- **Keyboard and mouse, switched independently** (owner, 2026-10-17): one Bluetooth
+  device per computer with keyboard + media + mouse reports (report IDs 1, 2, 3), and
+  two channels (`kb`, `mouse`) that each point at a slot. Two front buttons, NuPhy-style:
+  short press swaps that device to the other computer, a 3 s hold pairs the slot it's
+  on. Two LEDs per button (host 1, host 2). Mouse movement is summed and sent every
+  8 ms; clicks go at once. Old state/config files (one `active` number, `gpio_button`)
+  still load.
+- **Case uses the Pi's own layout** (owner, 2026-10-17): USB end at the back with all
+  four ports open, Ethernet covered, USB-C power through the side, buttons and LEDs on
+  the front. No adapters. (The earlier USB-C keyboard socket idea is dropped.)
 - Owner's hardware: a Vilros Pi 4 kit (4 GB Pi, 5.1 V 3 A switched supply, Vilros case
   with fan, SD card). The Vilros case is the stand-in until a custom case exists.
 

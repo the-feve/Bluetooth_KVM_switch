@@ -3,6 +3,7 @@
 - the HID report descriptor and the SDP record the hosts read when they pair
 - tables from Linux evdev key codes to USB HID usages
 - KeyState: which keys are down, and the HID reports that describe that
+- MouseState: buttons held and movement since the last report
 - Hotkeys: the profile-switch shortcuts, which are kept away from the hosts
 
 We re-build standard reports from evdev events instead of forwarding the keyboard's
@@ -16,9 +17,12 @@ from evdev import ecodes as e
 HID_UUID = "00001124-0000-1000-8000-00805f9b34fb"
 KEYBOARD_ID = 1
 CONSUMER_ID = 2
+MOUSE_ID = 3
 
 # Report 1: boot-style keyboard (modifier byte, reserved byte, 6 key slots) plus the
 # 5 LED output bits. Report 2: one 16-bit consumer-control usage (media keys).
+# Report 3: a mouse (5 buttons, 16-bit X/Y, wheel, horizontal wheel). One device
+# with all three means each computer pairs once and gets both keyboard and mouse.
 REPORT_DESCRIPTOR = bytes([
     0x05, 0x01,        # Usage Page (Generic Desktop)
     0x09, 0x06,        # Usage (Keyboard)
@@ -65,10 +69,50 @@ REPORT_DESCRIPTOR = bytes([
     0x95, 0x01,        #   Report Count (1)
     0x81, 0x00,        #   Input (Data, Array)
     0xC0,              # End Collection
+    0x05, 0x01,        # Usage Page (Generic Desktop)
+    0x09, 0x02,        # Usage (Mouse)
+    0xA1, 0x01,        # Collection (Application)
+    0x85, MOUSE_ID,    #   Report ID 3
+    0x09, 0x01,        #   Usage (Pointer)
+    0xA1, 0x00,        #   Collection (Physical)
+    0x05, 0x09,        #     Usage Page (Buttons)
+    0x19, 0x01,        #     Usage Minimum (1)
+    0x29, 0x05,        #     Usage Maximum (5)
+    0x15, 0x00,        #     Logical Minimum (0)
+    0x25, 0x01,        #     Logical Maximum (1)
+    0x95, 0x05,        #     Report Count (5)
+    0x75, 0x01,        #     Report Size (1)
+    0x81, 0x02,        #     Input (Data, Variable, Absolute)   buttons
+    0x95, 0x01,        #     Report Count (1)
+    0x75, 0x03,        #     Report Size (3)
+    0x81, 0x01,        #     Input (Constant)                   padding
+    0x05, 0x01,        #     Usage Page (Generic Desktop)
+    0x09, 0x30,        #     Usage (X)
+    0x09, 0x31,        #     Usage (Y)
+    0x16, 0x01, 0x80,  #     Logical Minimum (-32767)
+    0x26, 0xFF, 0x7F,  #     Logical Maximum (32767)
+    0x75, 0x10,        #     Report Size (16)
+    0x95, 0x02,        #     Report Count (2)
+    0x81, 0x06,        #     Input (Data, Variable, Relative)   X, Y
+    0x09, 0x38,        #     Usage (Wheel)
+    0x15, 0x81,        #     Logical Minimum (-127)
+    0x25, 0x7F,        #     Logical Maximum (127)
+    0x75, 0x08,        #     Report Size (8)
+    0x95, 0x01,        #     Report Count (1)
+    0x81, 0x06,        #     Input (Data, Variable, Relative)   wheel
+    0x05, 0x0C,        #     Usage Page (Consumer)
+    0x0A, 0x38, 0x02,  #     Usage (AC Pan)
+    0x95, 0x01,        #     Report Count (1)
+    0x81, 0x06,        #     Input (Data, Variable, Relative)   horizontal wheel
+    0xC0,              #   End Collection
+    0xC0,              # End Collection
 ])
 
 EMPTY_KEYBOARD = bytes([KEYBOARD_ID, 0, 0, 0, 0, 0, 0, 0, 0])
 EMPTY_CONSUMER = bytes([CONSUMER_ID, 0, 0])
+EMPTY_MOUSE = bytes([MOUSE_ID, 0, 0, 0, 0, 0, 0, 0])
+
+MOUSE_BUTTONS = {e.BTN_LEFT: 0x01, e.BTN_RIGHT: 0x02, e.BTN_MIDDLE: 0x04, e.BTN_SIDE: 0x08, e.BTN_EXTRA: 0x10}
 
 MODIFIER_BITS = {
     e.KEY_LEFTCTRL: 0x01, e.KEY_LEFTSHIFT: 0x02, e.KEY_LEFTALT: 0x04, e.KEY_LEFTMETA: 0x08,
@@ -195,6 +239,56 @@ class KeyState:
         self.suppressed.clear()
         self.consumer.clear()
         self._last.clear()
+
+
+def _clamp(v, lim):
+    return max(-lim, min(lim, v))
+
+
+class MouseState:
+    """A mouse's buttons, and the movement added up since the last report.
+
+    USB mice report up to 1000 times a second; Bluetooth carries far fewer, so
+    movement is summed between reports (nothing is lost, it just arrives in
+    bigger steps). What doesn't fit one report's range is kept for the next."""
+
+    def __init__(self):
+        self.buttons = 0
+        self.dx = self.dy = self.wheel = self.pan = 0
+
+    def event(self, etype, code, value):
+        """Apply one evdev event. Returns True if a button changed (send now)."""
+        if etype == e.EV_KEY and code in MOUSE_BUTTONS:
+            bit = MOUSE_BUTTONS[code]
+            before = self.buttons
+            self.buttons = (self.buttons | bit) if value else (self.buttons & ~bit)
+            return self.buttons != before
+        if etype == e.EV_REL:
+            if code == e.REL_X:
+                self.dx += value
+            elif code == e.REL_Y:
+                self.dy += value
+            elif code == e.REL_WHEEL:
+                self.wheel += value
+            elif code == e.REL_HWHEEL:
+                self.pan += value
+        return False
+
+    @property
+    def moved(self):
+        return bool(self.dx or self.dy or self.wheel or self.pan)
+
+    def report(self):
+        """The next report; takes the movement it carries out of the totals."""
+        x, y = _clamp(self.dx, 32767), _clamp(self.dy, 32767)
+        w, h = _clamp(self.wheel, 127), _clamp(self.pan, 127)
+        self.dx, self.dy, self.wheel, self.pan = self.dx - x, self.dy - y, self.wheel - w, self.pan - h
+        return bytes([MOUSE_ID, self.buttons]) + x.to_bytes(2, "little", signed=True) + \
+            y.to_bytes(2, "little", signed=True) + w.to_bytes(1, "little", signed=True) + h.to_bytes(1, "little", signed=True)
+
+    def clear(self):
+        self.buttons = 0
+        self.dx = self.dy = self.wheel = self.pan = 0
 
 
 class Hotkeys:

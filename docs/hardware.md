@@ -33,7 +33,7 @@ built-in keyboard, or a Pi 3, it will still work, but the case notes in
 official one; switch off only after `sudo poweroff`), a Vilros black case with fan (a
 stand-in until the custom box exists; fan on GPIO pins 4 and 6, no clash with ours), a
 microSD card (gets reflashed) and a micro-HDMI adapter (not needed). Still to buy: the
-USB-C→A adapter, a C-to-C cable, and the button/LED parts.
+button/LED parts, and a USB mouse if you don't have a spare.
 
 
 | Qty | Part | Notes |
@@ -41,65 +41,55 @@ USB-C→A adapter, a C-to-C cable, and the button/LED parts.
 | 1 | Raspberry Pi 4 Model B | you have it (Vilros kit, 4 GB) |
 | 1 | **Official Raspberry Pi 15 W USB-C power supply** (5.1 V 3 A) | Phone chargers sag in voltage, and Bluetooth gets flaky when the Pi runs low. The Pi 4's USB ports share a 1.2 A budget, plenty for the Sinc. |
 | 1 | microSD, 16–32 GB, A1, "High Endurance" type | e.g. SanDisk High Endurance |
-| 1 | **USB-C to USB-C cable**, 0.5–1 m | Sinc to the box's USB-C keyboard port. Any C-to-C cable carries keyboard data. |
-| 1 | **USB-C (female) to USB-A (male) adapter**, short, data-capable | Makes the box's keyboard port USB-C (Option A below). Get a *data* one, not "charge only"; ones with a 56 kΩ resistor are the in-spec kind. Measure it before the case CAD is finalised. |
+| 1 | **USB-C (keyboard) to USB-A (Pi) cable**, 0.5–1 m | the Sinc's own cable, if it's C-to-A |
+| 1 | **USB mouse** | wired, or wireless with a USB dongle; both work |
 | 1 | Pi 4 heatsink set (stick-on) | optional; the load is light but the case is closed |
-| 1 | Mini momentary panel push button, 7 mm thread (e.g. PBS-110 style) | profile toggle / pairing |
-| 2 | 3 mm LEDs, two colours (say green = host 1, blue = host 2) | or one common-cathode bicolour LED |
-| 2 | 330 Ω resistors, ¼ W | one per LED |
+| 2 | Mini momentary panel push buttons, 7 mm thread (e.g. PBS-110 style) | front: Keyboard and Mouse |
+| 4 | 3 mm LEDs, two colours (say 2 green = host 1, 2 blue = host 2) | one pair beside each button |
+| 4 | 330 Ω resistors, ¼ W | one per LED |
 | 1 | Female Dupont jumpers or a 2×20 female header, heat-shrink | so the Pi stays removable |
 | 4 + 4 | M2.5 × 6 mm screws, M2.5 heat-set inserts | Pi mounting |
 | 4 | M3 × 8 countersunk screws + M3 heat-set inserts | tray to lid |
 | 4 | Rubber feet | |
-| *opt. B* | Panel-mount **USB-C (female) to USB-A (male)** extension, 20–30 cm, right-angle A plug if you can | keyboard port anywhere on the case (Option B) |
-| *opt. B* | Panel-mount **USB-C (female) to USB-C (male)** extension, 20–30 cm, rated 3 A, right-angle plug if you can | power port anywhere on the case (Option B) |
-| *opt.* | Small perfboard (about 30 × 20 mm) | carries the button, LEDs and resistors |
+| 1 | Small perfboard (about 70 × 20 mm) | carries the buttons, LEDs and resistors behind the front panel |
 
 **Batteries:** not recommended. A Pi 4 draws about 3 W, so a 10,000 mAh power bank
 lasts only about 10–12 hours. A battery build would need a different board, such as a
 Zero 2 W with a PiSugar, plus a power-off routine.
 
-## USB-C on the box: power in and keyboard in
+## Ports on the box
 
-Both ports on the box are USB-C. Power is easy, since the Pi 4's power input is already
-USB-C. The keyboard needs one adapter, because the Pi 4's host ports are all USB-A.
+The case keeps the Pi's own layout, which also keeps it small:
 
-**Option A, compact (recommended):**
+- **Back:** the four USB ports, all left open. The keyboard and mouse go in the two
+  **black USB 2.0** ports; the blue USB 3.0 ports stay free for later. Ethernet is
+  covered (not used).
+- **Side:** the Pi's own **USB-C power** port, on its long edge.
+- **Front:** the two buttons, **Keyboard** and **Mouse**, each with its pair of LEDs.
 
-- **Power:** the Pi's own USB-C power port sits behind an opening in the right side
-  of the box. No extra parts.
-- **Keyboard:** a short USB-C (female) to USB-A (male) adapter plugs into a **black
-  USB 2.0 port**, and its USB-C face sits flush with the front face. A printed collar
-  in the case grips the adapter body, so pulling the keyboard cable loads the case,
-  not the Pi's USB port.
-- The two ports are on **different faces** (KB in front, PWR on the right), so they're
-  hard to mix up.
-
-**Option B, panel-mount cables:** two short panel-mount extensions (C→A for the
-keyboard, C→C for power) let you put both sockets wherever you like, for example side
-by side on the back wall. It's tidier on the desk, but the box gets bigger (room
-for the plugs and cable bends; right-angle plugs help) and there are two more
-connections that can work loose.
-
-**Rules for both options:**
-
-- **Label the ports on the case** (emboss "PWR" with a ⚡ and "KB" with a keyboard
-  icon). The keyboard port is *not* a power input. Some USB-C power supplies put
-  out 5 V as soon as they're plugged in, and that would push power backwards into
-  the Pi's USB port.
-- Power with the **official supply**. Early Pi 4 boards (rev 1.1) don't power up from
-  some USB-C laptop chargers with "smart" (e-marked) C-to-C cables.
-- Wiring 5 V straight to GPIO pins 2/4 + 6 also powers the Pi, but it bypasses the
-  Pi's input protection. Not needed here.
+No adapters or extension cables are needed: everything plugs straight into the Pi.
+Power with the official supply or a kit supply rated 5.1 V 3 A. Early Pi 4 boards
+(rev 1.1) don't power up from some USB-C laptop chargers with "smart" (e-marked) C-to-C
+cables.
 
 ## Wiring (BCM numbering, 40-pin header)
 
+All of the buttons and LEDs share one ground wire, so the front-panel perfboard needs
+seven wires to the Pi:
+
 ```
- Button:  GPIO17 (pin 11) ──[button]── GND (pin 9)        internal pull-up, no resistor
- LED 1:   GPIO23 (pin 16) ──[330 Ω]──►|── GND (pin 14)     host 1
- LED 2:   GPIO24 (pin 18) ──[330 Ω]──►|── GND (pin 20)     host 2
-                                    (long leg = anode, toward the resistor/GPIO)
+ GND ............ pin 9   (shared by both buttons and all four LED short legs)
+ Keyboard button  GPIO17  pin 11 ──[button]── GND     internal pull-up, no resistor
+ Mouse button     GPIO27  pin 13 ──[button]── GND
+ Keyboard LED 1   GPIO23  pin 16 ──[330 Ω]──►|── GND  keyboard on host 1
+ Keyboard LED 2   GPIO24  pin 18 ──[330 Ω]──►|── GND  keyboard on host 2
+ Mouse LED 1      GPIO22  pin 15 ──[330 Ω]──►|── GND  mouse on host 1
+ Mouse LED 2      GPIO25  pin 22 ──[330 Ω]──►|── GND  mouse on host 2
+                                  (long leg = anode, toward the resistor/GPIO)
 ```
 
-You can change the pins in `/etc/bt-kvm/config.json` (`gpio_button`,
-`gpio_led_host1`, `gpio_led_host2`). Set any of them to `null` to leave it out.
+They're all within pins 9–22, so a single 2 × 7 female header (pins 9–22) can carry
+them. The Vilros case fan, if fitted, stays on pins 4 and 6.
+
+You can change the pins in `/etc/bt-kvm/config.json` (`buttons` and `leds`, each with
+`kb` and `mouse`). Set any of them to `null` to leave it out.

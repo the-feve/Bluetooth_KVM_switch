@@ -6,6 +6,8 @@
 - [ ] Pair the work PC; confirm switching both ways, with both connected and with one asleep (Pi-initiated reconnect).
 - [ ] Caps Lock LED follows the active host.
 - [ ] Media keys (volume, play/pause) work on both.
+- [ ] Mouse: moves, clicks, scrolls (both wheels) on both computers; feels smooth at the 8 ms report interval (try 5–10 ms in config).
+- [ ] Front buttons: short press swaps only that device; 3 s hold pairs; the four LEDs show where each device is.
 - [ ] Measure the time from switching until the first keystroke lands, for both the connected and reconnect cases.
 - [ ] Reboot test: hosts reconnect by themselves after the Pi reboots.
 
@@ -15,11 +17,9 @@
 
 - [ ] Buy the USB-C→A adapter (data-capable) and a C-to-C cable for the Sinc; measure the adapter for the collar.
 
-- [ ] Measure the USB-C adapter (its USB-C end, and how far it sticks out of the USB port) before the case is finalised.
 
 ## Later
 - [ ] Enclosure CAD (Pi 4 box, panel USB-A and USB-C, button, two LEDs); dimensions are in docs/enclosure.md. Print fit coupons first.
 - [ ] Keep pairings when the read-only overlay is on (bind-mount /var/lib/bluetooth and /var/lib/bt-kvm onto a small writable partition).
-- [ ] Optional: forward QMK mouse keys (add a mouse report to the descriptor).
 - [ ] Optional: a third "wired" target via USB gadget mode on the Pi 4's USB-C (would need power through GPIO).
 - [ ] dbus-next uses `typing.no_type_check_decorator`, which goes away in Python 3.15; watch for that when Pi OS moves past 3.13.
