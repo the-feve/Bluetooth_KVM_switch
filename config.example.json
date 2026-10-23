@@ -22,7 +22,8 @@
   },
   "buttons": {
     "kb": 17,
-    "mouse": 27
+    "mouse": 27,
+    "both": 22
   },
   "leds": {
     "kb": [

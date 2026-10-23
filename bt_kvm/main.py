@@ -5,6 +5,7 @@ How it fits together (all in one asyncio loop, run as root by systemd):
   USB keyboard --evdev (grabbed)--> KeyState   --reports--> host the KEYBOARD channel points at
   USB mouse    --evdev (grabbed)--> MouseState --reports--> host the MOUSE channel points at
   front buttons (gpiozero thread), hotkeys --> switch a channel / pair; LEDs show where each points
+  foot pedal (optional, its own pin) --> keyboard and mouse together
 
 Two channels, switched independently (like a two-device NuPhy, one button each):
 a short press on a channel's button moves that device to the other computer; a long
@@ -46,7 +47,12 @@ CONFIG_PATH = Path(os.environ.get("BT_KVM_CONFIG", "/etc/bt-kvm/config.json"))
 STATE_PATH = Path(os.environ.get("BT_KVM_STATE", "/var/lib/bt-kvm/state.json"))
 
 CHANNELS = ("kb", "mouse")  # what each front button switches
-NAMES = {"kb": "keyboard", "mouse": "mouse"}
+NAMES = {"kb": "keyboard", "mouse": "mouse", "both": "pedal"}
+BUTTON_ACTIONS = {  # GPIO button -> (short press, 3 s hold)
+    "kb": ("kb_toggle", "kb_pair"),
+    "mouse": ("mouse_toggle", "mouse_pair"),
+    "both": ("both_toggle", "kb_pair"),   # foot pedal: keyboard and mouse together
+}
 
 DEFAULT_CONFIG = {
     "device_name": "BT-KVM Keyboard",
@@ -56,7 +62,7 @@ DEFAULT_CONFIG = {
     "device_names": [],
     # Single keys that fire an action. Map them on a QMK/VIA Fn layer.
     # Actions: host1/host2 (keyboard), mouse1/mouse2, both1/both2, kb_toggle,
-    # mouse_toggle, pair.
+    # mouse_toggle, both_toggle, pair.
     "hotkeys": {"KEY_F21": "host1", "KEY_F22": "host2", "KEY_F23": "pair",
                 "KEY_F19": "mouse1", "KEY_F20": "mouse2"},
     # Fallback chord that works with any keyboard: hold all of these + press a key.
@@ -65,7 +71,9 @@ DEFAULT_CONFIG = {
                    "KEY_0": "pair"},
     # BCM GPIO numbers; null disables one. Buttons to GND; LEDs via 330 ohm to GND.
     # Each channel has a button and two LEDs: [host 1, host 2].
-    "buttons": {"kb": 17, "mouse": 27},
+    # "both" is the optional foot pedal (docs/stompbox.md): it moves keyboard and mouse
+    # together. With nothing wired to it the pin just reads "not pressed".
+    "buttons": {"kb": 17, "mouse": 27, "both": 22},
     "leds": {"kb": [18, 23], "mouse": [24, 25]},
     "button_hold_seconds": 3,
     "pairing_seconds": 120,
@@ -528,6 +536,11 @@ class Kvm:
             await self.switch("kb", 1 - self.active("kb"))
         elif name == "mouse_toggle":
             await self.switch("mouse", 1 - self.active("mouse"))
+        elif name == "both_toggle":
+            # Both go to the computer the keyboard isn't on (so a split also rejoins there).
+            slot = 1 - self.active("kb")
+            for ch in CHANNELS:
+                await self.switch(ch, slot)
         elif name in ("pair", "kb_pair", "mouse_pair"):
             ch = "mouse" if name == "mouse_pair" else "kb"
             if self.pairing_slot is None:
@@ -677,10 +690,10 @@ class Kvm:
             log.warning("GPIO disabled: %s", ex)
             return
         hold = float(self.cfg["button_hold_seconds"])
-        for ch in CHANNELS:
+        for ch, (press, long_press) in BUTTON_ACTIONS.items():
             try:
                 pins = (self.cfg.get("leds") or {}).get(ch) or []
-                if len(pins) == 2 and all(p is not None for p in pins):
+                if ch in CHANNELS and len(pins) == 2 and all(p is not None for p in pins):
                     self.leds[ch] = [LED(p) for p in pins]
                 pin = (self.cfg.get("buttons") or {}).get(ch)
                 if pin is None:
@@ -691,15 +704,15 @@ class Kvm:
                 continue
             held = {"yes": False}
 
-            def on_held(ch=ch, held=held):
+            def on_held(held=held, action=long_press):
                 held["yes"] = True
-                self.action("mouse_pair" if ch == "mouse" else "kb_pair")
+                self.action(action)
 
-            def on_released(ch=ch, held=held):
+            def on_released(held=held, action=press):
                 if held["yes"]:
                     held["yes"] = False
                 else:
-                    self.action(f"{ch}_toggle")
+                    self.action(action)
 
             button.when_held = on_held
             button.when_released = on_released
@@ -775,6 +788,8 @@ def load_config():
         user["leds"] = {"kb": [user["gpio_led_host1"], user.get("gpio_led_host2")],
                         "mouse": DEFAULT_CONFIG["leds"]["mouse"]}
     cfg.update(user)
+    if isinstance(user.get("buttons"), dict):   # fill in buttons added since (the pedal)
+        cfg["buttons"] = {**DEFAULT_CONFIG["buttons"], **user["buttons"]}
     return cfg
 
 

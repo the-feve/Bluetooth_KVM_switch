@@ -17,7 +17,7 @@
 
 
 ## Later
-- [ ] Add-on: foot-pedal stomp box (two pedals wired in parallel with the front buttons over a USB-C cable used as plain wire; no software change). Plan and parts in docs/stompbox.md. Add it to the website guide as an optional step once built.
+- [ ] Add-on: foot-pedal stomp box (one pedal on GPIO22 that moves keyboard and mouse together, over a USB-C cable used as plain wire; software already done). Plan and parts in docs/stompbox.md. Add it to the website guide as an optional step once built.
 - [ ] Enclosure CAD (Pi 4 box, panel USB-A and USB-C, button, two LEDs); dimensions are in docs/enclosure.md. Print fit coupons first.
 - [ ] Keep pairings when the read-only overlay is on (bind-mount /var/lib/bluetooth and /var/lib/bt-kvm onto a small writable partition).
 - [ ] Optional: a third "wired" target via USB gadget mode on the Pi 4's USB-C (would need power through GPIO).

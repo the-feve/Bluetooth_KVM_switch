@@ -92,5 +92,8 @@ LEDs on the outer row:
 They're all within pins 9–22, so a single 2 × 7 female header (pins 9–22) can carry
 them. (GPIO18 is also the PCM audio pin; that's off by default, so it's free.) The Vilros case fan, if fitted, stays on pins 4 and 6.
 
-You can change the pins in `/etc/bt-kvm/config.json` (`buttons` and `leds`, each with
-`kb` and `mouse`). Set any of them to `null` to leave it out.
+The optional foot pedal ([stompbox.md](stompbox.md)) uses GPIO22 (pin 15) and GND
+(pin 14), so it fits the same header.
+
+You can change the pins in `/etc/bt-kvm/config.json` (`buttons` with `kb`, `mouse` and
+`both` for the pedal; `leds` with `kb` and `mouse`). Set any of them to `null` to leave it out.

@@ -126,6 +126,25 @@ def test_keyboard_and_mouse_switch_independently(tmp_path, monkeypatch):
     asyncio.run(go())
 
 
+def test_pedal_moves_keyboard_and_mouse_together(tmp_path, monkeypatch):
+    async def go():
+        kvm = make_kvm(tmp_path, monkeypatch)
+        _, _, intr1 = connect(kvm, "AA:AA:AA:AA:AA:01")
+        connect(kvm, "AA:AA:AA:AA:AA:02")
+        await kvm.do_action("both_toggle")
+        assert kvm.state["active"] == {"kb": 1, "mouse": 1}
+        # the old host is left with nothing held: keyboard, media keys and mouse all up
+        assert [intr1.recv(64) for _ in range(3)] == [
+            b"\xa1" + m.EMPTY_KEYBOARD, b"\xa1" + m.EMPTY_CONSUMER, b"\xa1" + m.EMPTY_MOUSE]
+        await kvm.do_action("both_toggle")
+        assert kvm.state["active"] == {"kb": 0, "mouse": 0}
+        # split (keyboard on 1, mouse on 2): both join the computer the keyboard isn't on
+        await kvm.do_action("mouse_toggle")
+        await kvm.do_action("both_toggle")
+        assert kvm.state["active"] == {"kb": 1, "mouse": 1}
+    asyncio.run(go())
+
+
 def test_old_state_and_config_files_still_load(tmp_path, monkeypatch):
     import json
     monkeypatch.setattr(m, "STATE_PATH", tmp_path / "state.json")
@@ -135,6 +154,9 @@ def test_old_state_and_config_files_still_load(tmp_path, monkeypatch):
     (tmp_path / "config.json").write_text(json.dumps({"gpio_button": 5, "gpio_led_host1": 6, "gpio_led_host2": 7}))
     cfg = m.load_config()
     assert cfg["buttons"]["kb"] == 5 and cfg["leds"]["kb"] == [6, 7] and cfg["buttons"]["mouse"] == 27
+    # a config written before the foot pedal existed still gets its pin
+    (tmp_path / "config.json").write_text(json.dumps({"buttons": {"kb": 5, "mouse": 6}}))
+    assert m.load_config()["buttons"] == {"kb": 5, "mouse": 6, "both": 22}
 
 
 def test_device_kinds():

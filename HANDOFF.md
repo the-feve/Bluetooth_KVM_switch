@@ -57,12 +57,14 @@
 - **Case uses the Pi's own layout** (owner, 2026-10-17): USB end at the back with all
   four ports open, Ethernet covered, USB-C power through the side, buttons and LEDs on
   the front. No adapters. (The earlier USB-C keyboard socket idea is dropped.)
-- **Stomp box add-on** (owner, 2026-10-23): same push buttons as the front panel,
-  behind hinged treadles with hard stops so a foot can't overload them. Wired in
-  parallel with the front buttons (same GPIOs), so no code change. Linked by a USB-C
-  data cable carrying only D+ (keyboard), D− (mouse) and GND; VBUS unconnected at
-  both ends and 1 kΩ series resistors, so plugging in a real USB device or PC is
-  harmless. TRS guitar jack is the fallback.
+- **Stomp box add-on** (owner, 2026-10-23): one foot pedal that moves keyboard and
+  mouse together (`both_toggle`: both go to the computer the keyboard isn't on; hold =
+  `kb_pair`). Its own pin, GPIO22 / pin 15, on by default (`buttons.both`; older
+  configs get it filled in). Same push button as the front panel, behind a hinged
+  treadle with a hard stop so a foot can't overload it. Linked by a USB-C data cable
+  carrying only D+ (switch) and GND; VBUS and D− unconnected at both ends and a 1 kΩ
+  series resistor, so plugging in a real USB device or PC is harmless. Guitar jack is
+  the fallback. Software done and unit-tested; hardware not built.
 - Owner's hardware: a Vilros Pi 4 kit (4 GB Pi, 5.1 V 3 A switched supply, Vilros case
   with fan, SD card). The Vilros case is the stand-in until a custom case exists.
 

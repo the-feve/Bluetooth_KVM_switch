@@ -25,7 +25,7 @@ diagrams. This README is the shorter technical version.
 
 - [docs/hardware.md](docs/hardware.md): which Pi to use, what to buy, wiring
 - [docs/enclosure.md](docs/enclosure.md): Pi 4 dimensions, port layout, case rules
-- [docs/stompbox.md](docs/stompbox.md): planned add-on, a foot pedal that mirrors the two front buttons
+- [docs/stompbox.md](docs/stompbox.md): planned add-on, a foot pedal that moves the keyboard and mouse together
 - [HANDOFF.md](HANDOFF.md): how the code works, and the decisions behind it
 
 ## How it works
@@ -58,12 +58,13 @@ diagrams. This README is the shorter technical version.
 |---|---|---|---|
 | Keyboard to the other computer | **Keyboard** button, short press | `F21` (host 1) / `F22` (host 2) | hold **both Ctrls** + `1` / `2` |
 | Mouse to the other computer | **Mouse** button, short press | `F19` (host 1) / `F20` (host 2) | hold **both Ctrls** + `3` / `4` |
+| Keyboard **and** mouse to the other computer | foot pedal (optional add-on, [docs/stompbox.md](docs/stompbox.md)), tap | `both1` / `both2` (add to `hotkeys` if you want them) | |
 | Pair a new computer (again to cancel) | either button, **hold 3 s** | `F23` | hold **both Ctrls** + `0` |
 
 A long hold pairs the computer slot that button's device is on, so to pair host 2,
 first switch to it with a short press. The computers never see F19–F23 or the chord
 keys. You can change any of these in `/etc/bt-kvm/config.json` (actions: `host1`,
-`host2`, `mouse1`, `mouse2`, `both1`, `both2`, `kb_toggle`, `mouse_toggle`, `pair`).
+`host2`, `mouse1`, `mouse2`, `both1`, `both2`, `kb_toggle`, `mouse_toggle`, `both_toggle`, `pair`).
 
 Each button has two LEDs beside it, one per computer: **solid** = the device is on
 that computer and connected · **slow blink** = on that computer, not connected ·
