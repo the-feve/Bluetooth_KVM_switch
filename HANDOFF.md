@@ -15,6 +15,9 @@
   empty repo), so a plain `git clone` gets the code. Renaming it to `main` later is fine;
   the guide links use `HEAD`.
 
+- Owner has bought all the suggested parts (2026-10-23).
+- Planned add-on (not started): a 3D-printed foot-pedal stomp box, see docs/stompbox.md.
+
 ## Code map
 
 - `bt_kvm/hid.py`: report descriptor, SDP record, evdev→HID tables, `KeyState`,
@@ -54,6 +57,12 @@
 - **Case uses the Pi's own layout** (owner, 2026-10-17): USB end at the back with all
   four ports open, Ethernet covered, USB-C power through the side, buttons and LEDs on
   the front. No adapters. (The earlier USB-C keyboard socket idea is dropped.)
+- **Stomp box add-on** (owner, 2026-10-23): same push buttons as the front panel,
+  behind hinged treadles with hard stops so a foot can't overload them. Wired in
+  parallel with the front buttons (same GPIOs), so no code change. Linked by a USB-C
+  data cable carrying only D+ (keyboard), D− (mouse) and GND; VBUS unconnected at
+  both ends and 1 kΩ series resistors, so plugging in a real USB device or PC is
+  harmless. TRS guitar jack is the fallback.
 - Owner's hardware: a Vilros Pi 4 kit (4 GB Pi, 5.1 V 3 A switched supply, Vilros case
   with fan, SD card). The Vilros case is the stand-in until a custom case exists.
 

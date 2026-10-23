@@ -15,10 +15,9 @@
 - [ ] As each step works on the Pi, remove its "not yet tested" badge and add photos or screenshots (Imager screens, first SSH login, Windows pairing, the wiring).
 - [ ] Add the enclosure as a guide step once the CAD exists (interactive exploded view or annotated renders).
 
-- [ ] Buy the USB-C→A adapter (data-capable) and a C-to-C cable for the Sinc; measure the adapter for the collar.
-
 
 ## Later
+- [ ] Add-on: foot-pedal stomp box (two pedals wired in parallel with the front buttons over a USB-C cable used as plain wire; no software change). Plan and parts in docs/stompbox.md. Add it to the website guide as an optional step once built.
 - [ ] Enclosure CAD (Pi 4 box, panel USB-A and USB-C, button, two LEDs); dimensions are in docs/enclosure.md. Print fit coupons first.
 - [ ] Keep pairings when the read-only overlay is on (bind-mount /var/lib/bluetooth and /var/lib/bt-kvm onto a small writable partition).
 - [ ] Optional: a third "wired" target via USB gadget mode on the Pi 4's USB-C (would need power through GPIO).

@@ -25,6 +25,7 @@ diagrams. This README is the shorter technical version.
 
 - [docs/hardware.md](docs/hardware.md): which Pi to use, what to buy, wiring
 - [docs/enclosure.md](docs/enclosure.md): Pi 4 dimensions, port layout, case rules
+- [docs/stompbox.md](docs/stompbox.md): planned add-on, a foot pedal that mirrors the two front buttons
 - [HANDOFF.md](HANDOFF.md): how the code works, and the decisions behind it
 
 ## How it works

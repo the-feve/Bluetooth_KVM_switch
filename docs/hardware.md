@@ -32,8 +32,8 @@ built-in keyboard, or a Pi 3, it will still work, but the case notes in
 (4 GB), a Vilros USB-C 5.1 V 3 A supply with an on/off switch (fine in place of the
 official one; switch off only after `sudo poweroff`), a Vilros black case with fan (a
 stand-in until the custom box exists; fan on GPIO pins 4 and 6, no clash with ours), a
-microSD card (gets reflashed) and a micro-HDMI adapter (not needed). Still to buy: the
-button/LED parts, and a USB mouse if you don't have a spare.
+microSD card (gets reflashed) and a micro-HDMI adapter (not needed). The owner has since
+bought the rest of the parts below (2026-10-23).
 
 
 | Qty | Part | Notes |
